@@ -1,0 +1,33 @@
+name: Reusable - Lint
+
+on:
+  workflow_call:
+    outputs:
+      lint-passed:
+        description: "Whether lint passed"
+        value: ${{ jobs.lint.outputs.lint-passed }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    outputs:
+      lint-passed: ${{ steps.set-output.outputs.lint-passed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint check
+        run: npm run lint
+
+      - name: Set output
+        id: set-output
+        run: echo "lint-passed=true" >> $GITHUB_OUTPUT

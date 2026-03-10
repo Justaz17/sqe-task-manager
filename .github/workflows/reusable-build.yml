@@ -1,0 +1,51 @@
+name: Reusable - Build
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment to build for"
+        required: true
+        type: string
+    secrets:
+      VITE_API_URL:
+        required: true
+    outputs:
+      build-passed:
+        description: "Whether build passed"
+        value: ${{ jobs.build.outputs.build-passed }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      build-passed: ${{ steps.set-output.outputs.build-passed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for ${{ inputs.environment }}
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_ENVIRONMENT: ${{ inputs.environment }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ inputs.environment }}
+          path: dist/
+          retention-days: 1
+
+      - name: Set output
+        id: set-output
+        run: echo "build-passed=true" >> $GITHUB_OUTPUT

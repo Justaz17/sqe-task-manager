@@ -1,0 +1,42 @@
+name: Reusable - Test
+
+on:
+  workflow_call:
+    outputs:
+      tests-passed:
+        description: "Whether all tests passed"
+        value: ${{ jobs.test.outputs.tests-passed }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    outputs:
+      tests-passed: ${{ steps.set-output.outputs.tests-passed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:run
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            coverage/
+          retention-days: 7
+
+      - name: Set output
+        id: set-output
+        run: echo "tests-passed=true" >> $GITHUB_OUTPUT
